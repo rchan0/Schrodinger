@@ -11,6 +11,8 @@ function solve(V::Function, x=range(-1, step=0.001, stop=1))
     # uses hbar=mass=1
     n=length(x)
     dx=x[2]-x[1]
+    
+    # discretize Schrodinger equation
     m=zeros(n,n)
     k=1/(2*dx^2)
     @inbounds for i=1:n
@@ -24,6 +26,8 @@ function solve(V::Function, x=range(-1, step=0.001, stop=1))
             m[i,i-1]=-k
         end
     end
+    
+    # solve for energy eigenvalues and wavefunctions
     evals,evecs=eigen(m)
 
     # only normalize bound states
@@ -36,11 +40,13 @@ function solve(V::Function, x=range(-1, step=0.001, stop=1))
         end
     end
     psis=[normalizepsi(evecs[1:n,i],dx) for i=1:unbound-1]
+    
     # add the unbound states to the array 
     return (vcat(psis,[evecs[1:n,i] for i=unbound:n]), evals, unbound)
 end
 
 function normalizepsi(psi,dx)
+    # helper function that normalizes input
     area=sum(abs2.(psi))*dx
     psi=psi./sqrt(area)
     return psi
@@ -95,23 +101,27 @@ end
 function timeevolution(psi, E, t)
     # time evolution of a stationary state
     # E = energy eigenvalue corresponding to psi
+    # t = time value
     return psi.*exp(-1im*E*t)
 end
 
-function decompose(psi, V, xrange)
-    # psi = arbitrary wavefunction corresponding to potential function V
-    # xrange = range of x values corresponding to psi
-    # decomposes psi into linear combination of eigenstates
+function decompose(psi, V, x)
+    # decomposes psi into superposition of eigenstates corresponding to potential V
     # returns the coefficients corresponding to this superposition
-    vecs=solve(x->V(x),xrange)[1]
+    # psi = arbitrary wavefunction
+    # x = range of x values corresponding to psi
+    vecs=solve(y->V(y),x)[1]
     coeffs=inv(reshape(hcat(vecs...), (length(vecs[1]), length(vecs))))*psi
     return coeffs
 end
 
-function timeevol_psi(psi, t, V, xrange)
-    # time evolution of an arbitrary wavefunction
-    evecs, evals=solve(x->V(x),xrange)
-    coeffs=decompose(psi,x->V(x),xrange)
+function timeevol_psi(psi, t, V, x)
+    # time evolution of an arbitrary wavefunction in potential V
+    # psi = arbitrary wavefunction
+    # x = range of x values corresponding to psi
+    # t = time value 
+    evecs, evals=solve(y->V(y),x)
+    coeffs=decompose(psi,y->V(y),x)
     return sum([coeffs[i].*timeevolution(evecs[i],evals[i],t) for i=1:length(coeffs)])
 end
 
@@ -129,6 +139,8 @@ function momentum(psi; x=range(-1, step=0.001, stop=1), p=range(-30, step=0.05, 
 end
 
 function prob(psi, dx)
+    # returns probability of psi
+    # dx = step for x values
     return abs2.(psi)*dx
 end
 end
