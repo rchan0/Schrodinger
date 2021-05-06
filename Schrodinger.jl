@@ -1,7 +1,7 @@
 module MySchrodinger
 using LinearAlgebra
 
-export solve, timeevolution, decompose, timeevol_psi, momentum, prob, squarewell, asymwell, wellbarrier
+export solve, timeevolution, decompose, momentum, prob, squarewell, asymwell, wellbarrier
 
 function solve(V::Function, x=range(-1, step=0.001, stop=1))
     # V = potential function
@@ -113,16 +113,6 @@ function decompose(psi, V, x)
     vecs=solve(y->V(y),x)[1]
     coeffs=inv(reshape(hcat(vecs...), (length(vecs[1]), length(vecs))))*psi
     return coeffs
-end
-
-function timeevol_psi(psi, t, V, x)
-    # time evolution of an arbitrary wavefunction in potential V
-    # psi = arbitrary wavefunction
-    # x = range of x values corresponding to psi
-    # t = time value 
-    evecs, evals=solve(y->V(y),x)
-    coeffs=decompose(psi,y->V(y),x)
-    return sum([coeffs[i].*timeevolution(evecs[i],evals[i],t) for i=1:length(coeffs)])
 end
 
 function momentum(psi; x=range(-1, step=0.001, stop=1), p=range(-30, step=0.05, stop=30))
